@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OutboxPublisher\Pay.Message.Exchange.OutboxPublisher.Entities\Pay.Message.Exchange.OutboxPublisher.Entities.csproj" />
+    <ProjectReference Include="..\..\OutboxPublisher\Pay.Message.Exchange.OutboxPublisher.Db\Pay.Message.Exchange.OutboxPublisher.Db.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,543 @@
+@use 'variables' as *;
+@use 'scrollbar-mixins' as *;
+
+// ── Reset ────────────────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background: $bg-base;
+  color: $text-primary;
+  font-family: $font-sans;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+// ── Layout ───────────────────────────────────────────────────────
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// ── Sidebar ──────────────────────────────────────────────────────
+.sidebar {
+  width: $sidebar-width;
+  background: $bg-surface;
+  border-right: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebar-logo {
+  height: $header-height;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-bottom: 1px solid $border;
+  gap: 10px;
+}
+
+.sidebar-logo-mark {
+  width: 26px;
+  height: 26px;
+  background: $accent;
+  border-radius: $radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.sidebar-logo-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-primary;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-nav { padding: 10px 8px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: $radius-md;
+  color: $text-secondary;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background $transition, color $transition;
+  user-select: none;
+  text-decoration: none;
+
+  &:hover { background: $bg-hover; color: $text-primary; }
+
+  &.active {
+    background: $accent-dim;
+    color: #818cf8;
+
+    .nav-icon { opacity: 1; }
+  }
+}
+
+.nav-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+// ── Page header ──────────────────────────────────────────────────
+.page-header {
+  height: $header-height;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid $border;
+  flex-shrink: 0;
+}
+
+.page-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-primary;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: $text-secondary;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse 2s infinite;
+
+  &.paused { background: $text-muted; animation: none; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+// ── Filter bar ───────────────────────────────────────────────────
+.filter-bar {
+  height: $filter-height;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-bottom: 1px solid $border;
+  background: $bg-surface;
+  flex-shrink: 0;
+}
+
+.filter-select,
+.filter-input {
+  height: 30px;
+  background: $bg-elevated;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  color: $text-primary;
+  font-size: 12px;
+  font-family: $font-sans;
+  padding: 0 10px;
+  outline: none;
+  transition: border-color $transition;
+
+  &:focus { border-color: $border-focus; }
+}
+
+.filter-select { min-width: 110px; cursor: pointer; }
+.filter-input  {
+  min-width: 140px;
+  &::placeholder { color: $text-muted; }
+}
+
+.filter-divider {
+  width: 1px;
+  height: 20px;
+  background: $border;
+  margin: 0 2px;
+}
+
+.filter-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: $text-muted;
+  white-space: nowrap;
+}
+
+.btn-clear {
+  height: 28px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  color: $text-secondary;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background $transition, color $transition;
+
+  &:hover { background: $bg-hover; color: $text-primary; }
+}
+
+// ── Signals body ─────────────────────────────────────────────────
+.signals-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+// ── Log table ────────────────────────────────────────────────────
+.log-table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  @include custom-scrollbar;
+}
+
+.log-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: $bg-surface;
+  }
+
+  th {
+    padding: 7px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid $border;
+    white-space: nowrap;
+  }
+}
+
+.col-time    { width: 90px; }
+.col-level   { width: 90px; }
+.col-service { width: 120px; }
+.col-trace   { width: 100px; }
+
+.log-row {
+  cursor: pointer;
+  transition: background $transition;
+  border-bottom: 1px solid transparent;
+
+  &:hover { background: $bg-hover; }
+  &.expanded { background: $bg-elevated; }
+
+  td {
+    padding: 5px 12px;
+    vertical-align: top;
+    font-size: 12px;
+  }
+}
+
+.log-time {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-muted;
+  white-space: nowrap;
+}
+
+.level-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-family: $font-mono;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &[data-level='verbose'],
+  &[data-level='debug']       { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
+  &[data-level='information'] { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+  &[data-level='warning']     { background: rgba(245, 158, 11, 0.15);  color: #fbbf24; }
+  &[data-level='error']       { background: rgba(239, 68, 68, 0.15);   color: #f87171; }
+  &[data-level='fatal']       { background: rgba(220, 38, 38, 0.25);   color: #fca5a5; }
+}
+
+.service-chip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.log-message {
+  font-family: $font-mono;
+  font-size: 12px;
+  color: $text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0; // makes text-overflow work in table cells
+
+  .log-row.expanded & {
+    white-space: normal;
+    overflow: visible;
+  }
+}
+
+.trace-link {
+  font-family: $font-mono;
+  font-size: 10px;
+  color: $text-muted;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  transition: color $transition;
+
+  &:hover { color: #818cf8; }
+}
+
+.log-props-row td {
+  padding: 0 12px 10px;
+  background: $bg-elevated;
+}
+
+.log-props {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0 0;
+  border-top: 1px solid $border;
+}
+
+.log-prop {
+  display: flex;
+  gap: 4px;
+  font-family: $font-mono;
+  font-size: 11px;
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: 3px;
+  padding: 2px 7px;
+}
+
+.log-prop-key   { color: $text-muted; }
+.log-prop-value { color: #a5f3fc; }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: $text-muted;
+  gap: 8px;
+}
+
+.empty-state-icon { font-size: 32px; opacity: 0.3; }
+.empty-state-text { font-size: 13px; }
+
+// ── Trace panel ──────────────────────────────────────────────────
+.trace-panel {
+  width: 380px;
+  flex-shrink: 0;
+  border-left: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: $bg-surface;
+}
+
+.trace-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid $border;
+  flex-shrink: 0;
+}
+
+.trace-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trace-id-display {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $text-muted;
+  padding: 6px 16px;
+  border-bottom: 1px solid $border;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: $radius-sm;
+  transition: color $transition, background $transition;
+
+  &:hover { color: $text-primary; background: $bg-hover; }
+}
+
+.trace-timeline {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 24px;
+  @include custom-scrollbar;
+}
+
+.trace-event {
+  display: flex;
+  gap: 12px;
+  position: relative;
+
+  & + & { margin-top: 0; }
+
+  &:last-child .trace-line { display: none; }
+}
+
+.trace-spine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.trace-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: $bg-surface;
+  flex-shrink: 0;
+  margin-top: 3px;
+
+  &[data-level='verbose'],
+  &[data-level='debug']       { border-color: #64748b; }
+  &[data-level='information'] { border-color: #3b82f6; }
+  &[data-level='warning']     { border-color: #f59e0b; }
+  &[data-level='error'],
+  &[data-level='fatal']       { border-color: #ef4444; background: rgba(239, 68, 68, 0.2); }
+}
+
+.trace-line {
+  flex: 1;
+  width: 1px;
+  background: $border;
+  min-height: 12px;
+}
+
+.trace-event-content {
+  flex: 1;
+  padding-bottom: 16px;
+  min-width: 0;
+}
+
+.trace-event-time {
+  font-family: $font-mono;
+  font-size: 10px;
+  color: $text-muted;
+  margin-bottom: 2px;
+}
+
+.trace-event-message {
+  font-family: $font-mono;
+  font-size: 12px;
+  color: $text-primary;
+  word-break: break-word;
+  margin-bottom: 4px;
+}
+
+.trace-event-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+// ── Global scrollbar ─────────────────────────────────────────────
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: $border; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: $border-focus; }
+
+// ── Backoffice ───────────────────────────────────────────────────
+.bo-actions { display: flex; gap: 6px; }
+
+.btn-approve,
+.btn-reject {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: $radius-sm;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid $border;
+  transition: background $transition, color $transition;
+
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.btn-approve {
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+  &:hover:not(:disabled) { background: rgba(16, 185, 129, 0.15); }
+}
+
+.btn-reject {
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+  &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.15); }
+}
+
+.amount-cell {
+  font-family: $font-mono;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}

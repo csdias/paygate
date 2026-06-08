@@ -1,0 +1,9 @@
+// Component-level scrollbar mixin — apply to any scrollable container.
+// Uses dark monitoring palette values directly to stay self-contained.
+
+@mixin custom-scrollbar {
+  &::-webkit-scrollbar        { width: 6px; height: 6px; }
+  &::-webkit-scrollbar-track  { background: transparent; }
+  &::-webkit-scrollbar-thumb  { background: #1f2d45; border-radius: 3px; }
+  &::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+}

@@ -1,0 +1,9 @@
+aws_region = "eu-west-1"
+
+# Replace with your actual VPC/subnet IDs
+vpc_id             = "vpc-0123456789abcdef0"
+private_subnet_ids = ["subnet-0123456789abcdef1", "subnet-0123456789abcdef2"]
+public_subnet_ids  = ["subnet-0123456789abcdef3", "subnet-0123456789abcdef4"]
+
+outbox_publisher_image_tag = "latest"
+payment_api_image_tag      = "latest"

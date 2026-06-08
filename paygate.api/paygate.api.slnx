@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Paygate.Api.IntegrationTests/Paygate.Api.IntegrationTests.csproj" />
+  </Folder>
+  <Project Path="Paygate.Api/Paygate.Api.csproj" />
+  <Project Path="Paygate.Data.Postgres/Paygate.Data.Postgres.csproj" />
+  <Project Path="Paygate.Data/Paygate.Data.csproj" />
+  <Project Path="Paygate.Domain/Paygate.Domain.csproj" />
+</Solution>

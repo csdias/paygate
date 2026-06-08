@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Paygate.Consumers.Tests/Paygate.Consumers.Tests.csproj" />
+  </Folder>
+  <Project Path="Paygate.Audit/Paygate.Audit.csproj" />
+  <Project Path="Paygate.Consumers.Common/Paygate.Consumers.Common.csproj" />
+  <Project Path="Paygate.Notification/Paygate.Notification.csproj" />
+</Solution>

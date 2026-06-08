@@ -1,0 +1,38 @@
+# ── .NET ────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+.vs/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.nupkg
+
+# ── Node / Vite (paygate.web, paygate.admin) ────────────────
+node_modules/
+dist/
+.vite/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Terraform (paygate.terraform) ─────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+
+# ── IDE / OS ────────────────────────────────────────────
+.idea/
+*.swp
+Thumbs.db
+.DS_Store
+
+# ── Tooling / local agent config ────────────────────────
+.claude/
+
+# ── Logs ────────────────────────────────────────────────
+*.log

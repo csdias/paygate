@@ -1,0 +1,56 @@
+# Local development stack for Paygate — the AWS analogue of Lernova's MongoDB+nginx compose.
+#
+# Brings up the two pieces of infrastructure the system needs:
+#   - postgres   : payment, outbox, and audit tables (init SQL bind-mounted from the repo)
+#   - localstack : SNS + SQS emulated on localhost:4566 (topic/queues created on startup)
+#
+# The .NET services (API, OutboxPublisher, consumer poller) run on the HOST against these,
+# so you can attach a debugger. See README.md for the run order.
+#
+#   docker compose up -d
+#
+# All data is ephemeral — no named volumes. Each `up` starts clean.
+
+services:
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  # Init scripts run once on first start, in filename order. We bind-mount the
+  # REAL schema files from each project so the local DB matches the app exactly.
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: paygate
+      POSTGRES_PASSWORD: paygate
+      POSTGRES_DB: paygate
+    ports:
+      - "5432:5432"
+    volumes:
+      - ../paygate.message.exchange/Resources/Sql/Postgres/outbox_creation.sql:/docker-entrypoint-initdb.d/01-outbox.sql:ro
+      - ../paygate.api/Resources/Sql/Postgres/payment_creation.sql:/docker-entrypoint-initdb.d/02-payment.sql:ro
+      - ../paygate.consumers/Paygate.Audit/audit_creation.sql:/docker-entrypoint-initdb.d/03-audit.sql:ro
+      - ./seed-registry.sql:/docker-entrypoint-initdb.d/04-seed-registry.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paygate -d paygate"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── LocalStack (SNS + SQS) ─────────────────────────────────────────────────
+  # The bootstrap script in init/ready.d runs once LocalStack is ready and
+  # creates the topic, queues, DLQs, and subscriptions — mirroring the Terraform
+  # in paygate.terraform/modules/messaging.
+  localstack:
+    image: localstack/localstack:3
+    environment:
+      SERVICES: sns,sqs
+      DEFAULT_REGION: eu-west-1
+      AWS_DEFAULT_REGION: eu-west-1
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./localstack-init:/etc/localstack/init/ready.d:ro
+    healthcheck:
+      test:
+        ["CMD-SHELL", "awslocal sns list-topics && awslocal sqs list-queues"]
+      interval: 6s
+      timeout: 5s
+      retries: 15

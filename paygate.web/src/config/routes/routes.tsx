@@ -1,0 +1,21 @@
+import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import App from '../../App'
+import { ROUTES } from './paths'
+
+const PaymentsList   = lazy(() => import('../../pages/payments/PaymentsList'))
+const CreatePayment  = lazy(() => import('../../pages/payments/CreatePayment'))
+const PaymentDetail  = lazy(() => import('../../pages/payments/PaymentDetail'))
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <App />,
+    children: [
+      { index: true, element: <Navigate to={ROUTES.payments.root.full()} replace /> },
+      { path: ROUTES.payments.root.path,   element: <Suspense fallback={null}><PaymentsList /></Suspense> },
+      { path: ROUTES.payments.new.path,    element: <Suspense fallback={null}><CreatePayment /></Suspense> },
+      { path: ROUTES.payments.detail.path, element: <Suspense fallback={null}><PaymentDetail /></Suspense> },
+    ],
+  },
+])

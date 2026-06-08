@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Paygate.Domain\Paygate.Domain.csproj" />
+    <ProjectReference Include="..\Paygate.Data\Paygate.Data.csproj" />
+    <ProjectReference Include="..\Paygate.Data.Postgres\Paygate.Data.Postgres.csproj" />
+    <ProjectReference Include="..\..\paygate.message.exchange\OutboxClient\Pay.Message.Exchange.OutboxClient\Pay.Message.Exchange.OutboxClient.csproj" />
+    <ProjectReference Include="..\..\paygate.message.exchange\OutboxClient\Pay.Message.Exchange.OutboxClient.Postgres\Pay.Message.Exchange.OutboxClient.Postgres.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.79" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

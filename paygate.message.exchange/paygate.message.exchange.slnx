@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/OutboxClient/">
+    <Project Path="OutboxClient/Pay.Message.Exchange.OutboxClient.IntegrationTests/Pay.Message.Exchange.OutboxClient.IntegrationTests.csproj" />
+    <Project Path="OutboxClient/Pay.Message.Exchange.OutboxClient.Postgres/Pay.Message.Exchange.OutboxClient.Postgres.csproj" />
+    <Project Path="OutboxClient/Pay.Message.Exchange.OutboxClient/Pay.Message.Exchange.OutboxClient.csproj" />
+  </Folder>
+  <Folder Name="/OutboxPublisher/">
+    <Project Path="OutboxPublisher/Pay.Message.Exchange.OutboxPublisher.Db.Postgres/Pay.Message.Exchange.OutboxPublisher.Db.Postgres.csproj" />
+    <Project Path="OutboxPublisher/Pay.Message.Exchange.OutboxPublisher.Db/Pay.Message.Exchange.OutboxPublisher.Db.csproj" />
+    <Project Path="OutboxPublisher/Pay.Message.Exchange.OutboxPublisher.Entities/Pay.Message.Exchange.OutboxPublisher.Entities.csproj" />
+    <Project Path="OutboxPublisher/Pay.Message.Exchange.OutboxPublisher.Services/Pay.Message.Exchange.OutboxPublisher.Services.csproj" />
+    <Project Path="OutboxPublisher/Pay.Message.Exchange.OutboxPublisher.Sns/Pay.Message.Exchange.OutboxPublisher.Sns.csproj" />
+    <Project Path="OutboxPublisher/Pay.Message.Exchange.OutboxPublisher/Pay.Message.Exchange.OutboxPublisher.csproj" />
+  </Folder>
+  <Folder Name="/OutboxPublisher/Tests/">
+    <Project Path="OutboxPublisher/Tests/Pay.Message.Exchange.OutboxPublisher.IntegrationTests.Postgres/Pay.Message.Exchange.OutboxPublisher.IntegrationTests.Postgres.csproj" />
+    <Project Path="OutboxPublisher/Tests/Pay.Message.Exchange.OutboxPublisher.UnitTests/Pay.Message.Exchange.OutboxPublisher.UnitTests.csproj" />
+  </Folder>
+</Solution>

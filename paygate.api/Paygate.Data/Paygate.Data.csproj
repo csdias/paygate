@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Paygate.Domain\Paygate.Domain.csproj" />
+    <ProjectReference Include="..\..\paygate.message.exchange\OutboxClient\Pay.Message.Exchange.OutboxClient\Pay.Message.Exchange.OutboxClient.csproj" />
+    <ProjectReference Include="..\..\paygate.message.exchange\OutboxPublisher\Pay.Message.Exchange.OutboxPublisher.Entities\Pay.Message.Exchange.OutboxPublisher.Entities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.79" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

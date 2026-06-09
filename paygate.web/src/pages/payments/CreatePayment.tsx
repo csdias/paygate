@@ -10,6 +10,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { useAuth } from 'react-oidc-context'
+import { hasRole } from '../../auth/userManager'
 import { useCreatePaymentMutation } from '../../store/payments/payments.api'
 import { useGetCustomersQuery, useGetMerchantsQuery } from '../../store/directory/directory.api'
 import { ROUTES } from '../../config/routes/paths'
@@ -34,6 +36,7 @@ const INITIAL: FormState = {
 
 export default function CreatePayment() {
   const navigate = useNavigate()
+  const auth = useAuth()
   const [createPayment, { isLoading, isError }] = useCreatePaymentMutation()
   const { data: customers = [], isLoading: customersLoading } = useGetCustomersQuery()
   const { data: merchants = [], isLoading: merchantsLoading } = useGetMerchantsQuery()
@@ -63,6 +66,17 @@ export default function CreatePayment() {
       reference: form.reference.trim() || undefined,
     })
     if (!('error' in result)) navigate(ROUTES.payments.root.full())
+  }
+
+  if (!hasRole(auth.user, 'PaymentInitiator')) {
+    return (
+      <Box sx={{ maxWidth: 480 }}>
+        <Alert severity="warning">
+          You don't have permission to create payments — the <b>PaymentInitiator</b> role is required.
+          (The API enforces this too.)
+        </Alert>
+      </Box>
+    )
   }
 
   return (

@@ -14,8 +14,8 @@ public class PostgresPaymentRepository : IPaymentRepository
     public async Task<Payment> InsertAsync(Payment payment, IDbTransaction transaction)
     {
         const string sql = @"
-INSERT INTO payment (payment_id, amount, currency, customer_id, merchant_id, card_id, processor, status, reference, created_at, updated_at)
-VALUES (@PaymentId, @Amount, @Currency, @CustomerId, @MerchantId, @CardId, @Processor, @Status, @Reference, @CreatedAt, @UpdatedAt)
+INSERT INTO payment (payment_id, amount, currency, customer_id, merchant_id, card_id, processor, status, reference, created_by, created_at, updated_at)
+VALUES (@PaymentId, @Amount, @Currency, @CustomerId, @MerchantId, @CardId, @Processor, @Status, @Reference, @CreatedBy, @CreatedAt, @UpdatedAt)
 RETURNING *";
 
         return await transaction.Connection!.QuerySingleAsync<Payment>(sql, payment, transaction);

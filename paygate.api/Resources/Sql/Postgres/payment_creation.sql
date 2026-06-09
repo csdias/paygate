@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS payment (
     status         VARCHAR(20)   NOT NULL DEFAULT 'Pending',
     decline_reason VARCHAR(200)  NULL,
     reference      VARCHAR(100)  NULL,
+    created_by     VARCHAR(200)  NULL,                  -- actor id (token sub) for maker-checker
     created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );

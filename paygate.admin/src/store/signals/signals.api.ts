@@ -1,9 +1,10 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
 import type { LogEntry } from './signals.types'
+import { makeBaseQuery } from '../helpers'
 
 export const signalsApi = createApi({
   reducerPath: 'signalsApi',
-  baseQuery: fetchBaseQuery({ baseUrl: '/telemetry' }),
+  baseQuery: makeBaseQuery('/telemetry'),
   endpoints: (builder) => ({
     getLogs: builder.query<LogEntry[], { limit?: number }>({
       query: ({ limit = 500 } = {}) => `logs?limit=${limit}`,

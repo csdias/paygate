@@ -36,3 +36,6 @@ Thumbs.db
 
 # ── Logs ────────────────────────────────────────────────
 *.log
+
+# Duende IdentityServer auto-generated signing keys (do not commit)
+paygate.identity/Paygate.IdentityServer/keys/

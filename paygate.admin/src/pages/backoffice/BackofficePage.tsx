@@ -1,3 +1,5 @@
+import { useAuth } from 'react-oidc-context'
+import { hasRole } from '../../auth/userManager'
 import {
   useGetPendingQuery,
   useApprovePaymentMutation,
@@ -9,6 +11,8 @@ function formatTime(ts: string) {
 }
 
 export default function BackofficePage() {
+  const auth = useAuth()
+  const canDecide = hasRole(auth.user, 'PaymentApprover')
   const { data, isLoading, isError } = useGetPendingQuery(undefined, { pollingInterval: 4000 })
   const [approve, approveState] = useApprovePaymentMutation()
   const [reject, rejectState] = useRejectPaymentMutation()
@@ -26,7 +30,9 @@ export default function BackofficePage() {
     <>
       <div className="page-header">
         <span className="page-title">Backoffice</span>
-        <span className="filter-count">{pending.length} pending</span>
+        <span className="filter-count">
+          {pending.length} pending{!canDecide ? ' · read-only (PaymentApprover role required)' : ''}
+        </span>
       </div>
 
       <div className="log-table-wrap">
@@ -67,14 +73,18 @@ export default function BackofficePage() {
                   <td>{p.processor}</td>
                   <td className="log-time">{formatTime(p.createdAt)}</td>
                   <td>
-                    <div className="bo-actions">
-                      <button className="btn-approve" disabled={busy} onClick={() => approve(p.paymentId)}>
-                        Approve
-                      </button>
-                      <button className="btn-reject" disabled={busy} onClick={() => onReject(p.paymentId)}>
-                        Reject
-                      </button>
-                    </div>
+                    {canDecide ? (
+                      <div className="bo-actions">
+                        <button className="btn-approve" disabled={busy} onClick={() => approve(p.paymentId)}>
+                          Approve
+                        </button>
+                        <button className="btn-reject" disabled={busy} onClick={() => onReject(p.paymentId)}>
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="log-time">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

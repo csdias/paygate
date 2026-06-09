@@ -132,7 +132,7 @@ differently depending on who's signed in. Run the two SPAs (`paygate.web` on :30
 | View the payment list | **auditor** | web or admin | Works — read-only roles can still read. |
 | Approve a pending payment | **approver** | admin → Backoffice | Approve/Reject buttons present; approving a clerk-created payment → 200. |
 | Approve a payment | **auditor** | admin → Backoffice | List is **read-only**; Approve/Reject replaced with `—`. |
-| Approve a payment | **clerk** | (token via curl, see §3) | `403` — clerk has `payments.write`, not `payments.approve`. |
+| Approve a payment | **clerk** | not exposed in the UI | `403` — clerk has `payments.write`, not `payments.approve` (covered by the integration test `ApprovePayment_AsClerk_Returns403_WrongRoleAndScope`). |
 
 **Maker-checker (and why you can't trigger it with these users).** This is itself the
 lesson: **clerk** can only create and **approver** can only decide, so a single person can
@@ -154,43 +154,24 @@ user has. Two ways to see it:
 
 ## 3. Exercise the chain
 
-First get an access token. During this backend-first phase the IdentityServer exposes a
-Resource-Owner-Password client (`paygate.test`) so you can mint tokens from the shell
-without a login UI (this client is verification-only — it goes away once the React
-code+PKCE flow lands):
+The payment endpoints require a signed-in user, so drive the flow through the UIs:
+
+1. **paygate.web** (http://localhost:3000) — sign in as **clerk**, create a payment.
+2. **paygate.admin** (http://localhost:5173) — sign in as **approver** (a *different*
+   user; maker-checker forbids self-approval) and approve it.
+
+Copy the payment id from the list in paygate.web, then inspect the outbox/audit side effects:
 
 ```powershell
-function Get-Token($user) {
-  (Invoke-RestMethod http://localhost:5001/connect/token -Method Post -Body @{
-     grant_type    = "password"
-     username      = $user
-     password      = "Pass123`$"
-     client_id     = "paygate.test"
-     client_secret = "test-secret"
-     scope         = "payments.read payments.write payments.approve"
-   }).access_token
-}
-$clerk    = Get-Token clerk
-$approver = Get-Token approver
+$id = "<paymentId>"   # from the payments list in paygate.web
 
-$body = @{ amount = 275.50; currency = "EUR"
-           customerId = [guid]::NewGuid().ToString()
-           merchantId = [guid]::NewGuid().ToString()
-           reference = "DEMO" } | ConvertTo-Json
-$p = Invoke-RestMethod http://localhost:5000/payments -Method Post -Body $body `
-       -ContentType application/json -Headers @{ Authorization = "Bearer $clerk" }
-
-# approve as a DIFFERENT user (maker-checker) — approving as $clerk would 403
-Invoke-RestMethod "http://localhost:5000/payments/$($p.paymentId)/approve" -Method Post `
-       -Headers @{ Authorization = "Bearer $approver" }
-
-# outbox row published?
+# outbox row published to SNS?
 docker exec paygatelocaldev-postgres-1 psql -U paygate -d paygate -c `
-  "SELECT published_at IS NOT NULL AS published FROM outbox WHERE context_id='$($p.paymentId)';"
+  "SELECT published_at IS NOT NULL AS published FROM outbox WHERE context_id='$id';"
 
 # audit Lambda wrote the row?
 docker exec paygatelocaldev-postgres-1 psql -U paygate -d paygate -c `
-  "SELECT payment_id, event_type FROM payment_audit WHERE payment_id='$($p.paymentId)';"
+  "SELECT payment_id, event_type FROM payment_audit WHERE payment_id='$id';"
 ```
 
 The notification handler's output (including the trace id) appears in the

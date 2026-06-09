@@ -68,23 +68,121 @@ docker exec paygatelocaldev-postgres-1 psql -U paygate -d paygate -c "\dt"
 ## 2. Run the services (each in its own terminal)
 
 ```powershell
-.\run-api.ps1          # http://localhost:5000
-.\run-publisher.ps1    # polls the outbox, publishes to SNS
-.\run-consumers.ps1    # polls both SQS queues, invokes the Lambda handlers
+.\run-identityserver.ps1   # http://localhost:5001  (OIDC issuer — start FIRST)
+.\run-api.ps1              # http://localhost:5000
+.\run-publisher.ps1        # polls the outbox, publishes to SNS
+.\run-consumers.ps1        # polls both SQS queues, invokes the Lambda handlers
 ```
 
 Each script sets the environment it needs and runs the project with
 `dotnet run --no-launch-profile`. To debug instead, launch the same project from
 your IDE with the same environment variables (see the script for the list).
 
+> **Start order matters:** the API validates JWT access tokens against the
+> IdentityServer's discovery doc, so run `run-identityserver.ps1` before
+> `run-api.ps1`.
+
+## Authentication & authorization
+
+The payment endpoints are protected by OAuth2 scopes + OIDC role claims issued by
+**Paygate.IdentityServer** (Duende, in-memory config). Two layers are enforced
+together: a **scope** (what the client app may do) AND a **role** (what the user may do).
+
+| Endpoint                     | Scope              | Role               |
+| ---------------------------- | ------------------ | ------------------ |
+| `POST /payments`             | `payments.write`   | `PaymentInitiator` |
+| `POST /payments/{id}/approve`| `payments.approve` | `PaymentApprover`  |
+| `POST /payments/{id}/reject` | `payments.approve` | `PaymentApprover`  |
+| `GET  /payments`, `GET /payments/{id}` | `payments.read` | any of the three roles |
+
+Test users (all password `Pass123$`): **clerk** (PaymentInitiator), **approver**
+(PaymentApprover), **auditor** (Auditor, read-only).
+
+**Maker-checker:** the approver of a payment must not be its creator (the token `sub`
+is stored as `created_by`). Self-approval returns `403`.
+
+> **Cookies over HTTP (`SameSite=Lax`):** local dev runs on plain HTTP, but Duende's
+> session cookie defaults to `SameSite=None`, which browsers **drop** unless it's also
+> `Secure`. Over HTTP that silently breaks login — the antiforgery cookie never sticks,
+> so the credential POST is rejected before it's even checked (you'll see
+> `The cookie 'idsrv' has set 'SameSite=None' and must also set 'Secure'` in the
+> IdentityServer log, and no login event). The fix lives in
+> `paygate.identity/Paygate.IdentityServer/Program.cs`:
+>
+> ```csharp
+> options.Authentication.CookieSameSiteMode = SameSiteMode.Lax;
+> options.Authentication.CheckSessionCookieSameSiteMode = SameSiteMode.Lax;
+> ```
+>
+> `Lax` is correct for the redirect-based Authorization Code flow (the cookie is set and
+> read entirely on `:5001`; only the final hop to the SPA carries the code in the URL).
+> In production over HTTPS you'd leave the defaults and rely on `Secure`. If login ever
+> misbehaves, **try a fresh incognito window** — a stale rejected-cookie state lingers.
+
+## Play with the roles (try this)
+
+The three users exist to make **authorization** visible — the same screen behaves
+differently depending on who's signed in. Run the two SPAs (`paygate.web` on :3000,
+`paygate.admin` on :5173) and log in as each user to see it. All passwords are `Pass123$`.
+
+| Try this | Sign in as | Where | Expected |
+| --- | --- | --- | --- |
+| Create a payment | **clerk** | web → New Payment | Works (201). The "New Payment" button is visible. |
+| Create a payment | **auditor** | web | Button **hidden**; visiting `/payments/new` shows "PaymentInitiator role required". |
+| View the payment list | **auditor** | web or admin | Works — read-only roles can still read. |
+| Approve a pending payment | **approver** | admin → Backoffice | Approve/Reject buttons present; approving a clerk-created payment → 200. |
+| Approve a payment | **auditor** | admin → Backoffice | List is **read-only**; Approve/Reject replaced with `—`. |
+| Approve a payment | **clerk** | (token via curl, see §3) | `403` — clerk has `payments.write`, not `payments.approve`. |
+
+**Maker-checker (and why you can't trigger it with these users).** This is itself the
+lesson: **clerk** can only create and **approver** can only decide, so a single person can
+never both create *and* approve a payment — role separation makes self-approval structurally
+impossible, and every pending payment is clerk-created. The `created_by == approver` check
+in the service is a **defense-in-depth backstop** behind that role design. To watch the
+backstop actually return `403`, you need a principal holding *both* roles, which no test
+user has. Two ways to see it:
+- Run the integration test `ApprovePayment_BySameUserWhoCreated_Returns403_MakerChecker`
+  (it fabricates a dual-role identity) — see `paygate.api/Tests`.
+- Or, as an experiment, add a fourth test user with **both** `PaymentInitiator` and
+  `PaymentApprover` role claims in `Paygate.IdentityServer/TestUsers.cs`, log in as them,
+  create a payment, then try to approve it → `403` maker-checker.
+
+**Things to notice in the browser DevTools → Network tab:**
+- every API call carries `Authorization: Bearer …`;
+- decode the access token at <https://jwt.ms> to see the `scope` array and the `role` claim
+  — the two independent layers the API checks together.
+
 ## 3. Exercise the chain
 
+First get an access token. During this backend-first phase the IdentityServer exposes a
+Resource-Owner-Password client (`paygate.test`) so you can mint tokens from the shell
+without a login UI (this client is verification-only — it goes away once the React
+code+PKCE flow lands):
+
 ```powershell
+function Get-Token($user) {
+  (Invoke-RestMethod http://localhost:5001/connect/token -Method Post -Body @{
+     grant_type    = "password"
+     username      = $user
+     password      = "Pass123`$"
+     client_id     = "paygate.test"
+     client_secret = "test-secret"
+     scope         = "payments.read payments.write payments.approve"
+   }).access_token
+}
+$clerk    = Get-Token clerk
+$approver = Get-Token approver
+
 $body = @{ amount = 275.50; currency = "EUR"
            customerId = [guid]::NewGuid().ToString()
            merchantId = [guid]::NewGuid().ToString()
            reference = "DEMO" } | ConvertTo-Json
-$p = Invoke-RestMethod http://localhost:5000/payments -Method Post -Body $body -ContentType application/json
+$p = Invoke-RestMethod http://localhost:5000/payments -Method Post -Body $body `
+       -ContentType application/json -Headers @{ Authorization = "Bearer $clerk" }
+
+# approve as a DIFFERENT user (maker-checker) — approving as $clerk would 403
+Invoke-RestMethod "http://localhost:5000/payments/$($p.paymentId)/approve" -Method Post `
+       -Headers @{ Authorization = "Bearer $approver" }
 
 # outbox row published?
 docker exec paygatelocaldev-postgres-1 psql -U paygate -d paygate -c `

@@ -1,4 +1,5 @@
 using Dapper;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,10 +56,39 @@ public class ApiIntegrationTestFixture : IAsyncLifetime
                 {
                     services.RemoveAll<IOutboxService>();
                     services.AddScoped(_ => OutboxServiceMock.Object);
+
+                    // Swap real JWT bearer for the header-driven test scheme (set as default,
+                    // so the endpoints' RequireAuthorization policies authenticate against it).
+                    services.AddAuthentication(TestAuthHandler.SchemeName)
+                        .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
                 });
             });
 
-        Client = _factory.CreateClient();
+        Client = _factory.CreateClient();   // anonymous (no persona headers) → 401 on protected routes
+    }
+
+    // Persona scopes/roles mirror the IdentityServer client + user config.
+    public HttpClient AsClerk() =>
+        ClientAs("clerk", "PaymentInitiator", "payments.read payments.write");
+
+    public HttpClient AsApprover() =>
+        ClientAs("approver", "PaymentApprover", "payments.read payments.approve");
+
+    public HttpClient AsAuditor() =>
+        ClientAs("auditor", "Auditor", "payments.read");
+
+    // A single principal holding both create and approve rights — used only to prove the
+    // maker-checker rule blocks self-approval (same sub created and approved).
+    public HttpClient AsMakerChecker(string sub) =>
+        ClientAs(sub, "PaymentInitiator,PaymentApprover", "payments.read payments.write payments.approve");
+
+    public HttpClient ClientAs(string sub, string roles, string scopes)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Sub", sub);
+        client.DefaultRequestHeaders.Add("X-Test-Role", roles);
+        client.DefaultRequestHeaders.Add("X-Test-Scope", scopes);
+        return client;
     }
 
     public async Task DisposeAsync()

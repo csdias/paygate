@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Serilog;
 using Serilog.Enrichers.Span;
 using Serilog.Events;
@@ -41,6 +42,32 @@ try
               .AllowAnyHeader()
               .AllowAnyMethod()));
 
+    // ── Authentication: validate JWT access tokens issued by Paygate.IdentityServer ──
+    var authority = builder.Configuration["IdentityServer:Authority"] ?? "http://localhost:5001";
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.Authority = authority;          // OIDC metadata + signing keys fetched from here
+            options.RequireHttpsMetadata = false;   // local issuer is plain http
+            options.MapInboundClaims = false;       // keep raw "sub"/"role"/"scope" claim types
+            options.TokenValidationParameters.ValidAudience = "paygate.api";
+            options.TokenValidationParameters.NameClaimType = "name";
+            options.TokenValidationParameters.RoleClaimType = "role";
+        });
+
+    // ── Authorization: every policy requires a SCOPE (what the client app may do) AND
+    //    a ROLE (what the user may do). Demonstrates the two OAuth layers enforced together. ──
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy("CanCreatePayment", p => p
+            .RequireAuthenticatedUser().RequireClaim("scope", "payments.write").RequireRole("PaymentInitiator"));
+        options.AddPolicy("CanDecidePayment", p => p
+            .RequireAuthenticatedUser().RequireClaim("scope", "payments.approve").RequireRole("PaymentApprover"));
+        options.AddPolicy("CanReadPayment", p => p
+            .RequireAuthenticatedUser().RequireClaim("scope", "payments.read")
+            .RequireRole("Auditor", "PaymentInitiator", "PaymentApprover"));
+    });
+
     builder.Services.UsePostgresPayment();
     builder.Services.AddPaymentServices();
 
@@ -54,6 +81,8 @@ try
     var app = builder.Build();
 
     app.UseCors();
+    app.UseAuthentication();
+    app.UseAuthorization();
 
     if (app.Environment.IsDevelopment())
         app.MapOpenApi();

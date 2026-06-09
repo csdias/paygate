@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "react-oidc-context";
 import { ROUTES } from "../config/routes/paths";
 
 const SignalsIcon = () => (
@@ -37,6 +38,9 @@ const BackofficeIcon = () => (
 );
 
 export default function Sidebar() {
+  const auth = useAuth();
+  const name = (auth.user?.profile?.name as string | undefined) ?? auth.user?.profile?.sub;
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -59,6 +63,15 @@ export default function Sidebar() {
           Backoffice
         </NavLink>
       </nav>
+      {auth.isAuthenticated && (
+        <div style={{ marginTop: "auto", padding: "12px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ fontSize: "0.8rem", marginBottom: 8, opacity: 0.8 }}>{name}</div>
+          <button className="nav-item" style={{ width: "100%", cursor: "pointer" }}
+                  onClick={() => void auth.signoutRedirect()}>
+            Logout
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

@@ -8,5 +8,6 @@ $repo = Split-Path $PSScriptRoot -Parent
 
 $env:ASPNETCORE_ENVIRONMENT = "Development"
 $env:ASPNETCORE_URLS = "http://localhost:5000"   # matches the paygate.admin Vite proxy
+$env:IdentityServer__Authority = "http://localhost:5001"   # OIDC issuer for JWT validation (run-identityserver.ps1)
 
 dotnet run --project "$repo\paygate.api\Paygate.Api" --no-launch-profile

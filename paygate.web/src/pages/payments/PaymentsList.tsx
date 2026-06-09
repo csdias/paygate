@@ -15,6 +15,8 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import { useAuth } from 'react-oidc-context'
+import { hasRole } from '../../auth/userManager'
 import { useListPaymentsQuery } from '../../store/payments/payments.api'
 import { setAfterPage } from '../../store/payments/payments.slice'
 import { useAppDispatch, useAppSelector } from '../../hooks/redux.hooks'
@@ -32,6 +34,8 @@ type StatusKey = keyof typeof STATUS_COLOR
 
 export default function PaymentsList() {
   const navigate = useNavigate()
+  const auth = useAuth()
+  const canCreate = hasRole(auth.user, 'PaymentInitiator')
   const dispatch = useAppDispatch()
   const afterId = useAppSelector((s) => s.payments.afterId)
   const customerName = useCustomerNames()
@@ -47,13 +51,15 @@ export default function PaymentsList() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Payments</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate(ROUTES.payments.new.full())}
-        >
-          New Payment
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate(ROUTES.payments.new.full())}
+          >
+            New Payment
+          </Button>
+        )}
       </Box>
 
       <TableContainer component={Paper} variant="outlined">

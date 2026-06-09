@@ -1,9 +1,10 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
 import type { PagedPending } from './backoffice.types'
+import { makeBaseQuery } from '../helpers'
 
 export const backofficeApi = createApi({
   reducerPath: 'backofficeApi',
-  baseQuery: fetchBaseQuery({ baseUrl: '/payments' }),
+  baseQuery: makeBaseQuery('/payments'),
   tagTypes: ['Pending'],
   endpoints: (builder) => ({
     getPending: builder.query<PagedPending, void>({

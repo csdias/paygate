@@ -4,6 +4,13 @@ using Pay.Message.Exchange.OutboxClient;
 
 namespace Paygate.Data;
 
+// Result of an approve/reject attempt. Three distinct outcomes so the endpoint can
+// return the right status code (200 / 409 / 403) — in particular distinguishing a
+// maker-checker violation from "not pending".
+public enum DecisionResult { Decided, NotPendingOrMissing, SelfApprovalRejected }
+
+public record DecisionOutcome(DecisionResult Result, Payment? Payment);
+
 public class PaymentService
 {
     private readonly IDbConnectionFactory _connectionFactory;
@@ -24,7 +31,7 @@ public class PaymentService
     }
 
     public async Task<Payment> CreateAsync(decimal amount, string currency, Guid customerId, Guid merchantId,
-        Guid cardId, string? reference = null)
+        Guid cardId, string createdBy, string? reference = null)
     {
         var registry = await ResolveRegistryAsync("PaymentInitiatedEvent");
 
@@ -43,6 +50,7 @@ public class PaymentService
             Processor = "Omni Card",
             Status = PaymentStatus.Pending,
             Reference = reference,
+            CreatedBy = createdBy,
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow
         };
@@ -78,8 +86,16 @@ public class PaymentService
     /// PaymentDecidedEvent to the outbox in the same transaction (so the decision reaches the
     /// notification pipeline reliably). Returns null if the payment isn't Pending any more.
     /// </summary>
-    public async Task<Payment?> DecideAsync(Guid paymentId, bool approved, string? reason)
+    public async Task<DecisionOutcome> DecideAsync(Guid paymentId, bool approved, string? reason, string approver)
     {
+        // Maker-checker (segregation of duties): the approver must not be the creator.
+        // Checked before the transaction; the local race window is acceptable for this study project.
+        var existing = await _paymentRepository.GetByIdAsync(paymentId);
+        if (existing is null)
+            return new DecisionOutcome(DecisionResult.NotPendingOrMissing, null);
+        if (string.Equals(existing.CreatedBy, approver, StringComparison.Ordinal))
+            return new DecisionOutcome(DecisionResult.SelfApprovalRejected, null);
+
         var status = approved ? PaymentStatus.Authorized : PaymentStatus.Declined;
         var registry = await ResolveRegistryAsync("PaymentDecidedEvent");
 
@@ -93,7 +109,7 @@ public class PaymentService
         if (updated is null)
         {
             transaction.Rollback();
-            return null; // not found, or already decided
+            return new DecisionOutcome(DecisionResult.NotPendingOrMissing, null); // not found, or already decided
         }
 
         var messageBody = JsonSerializer.Serialize(new
@@ -108,7 +124,7 @@ public class PaymentService
             messageBody, transaction);
 
         transaction.Commit();
-        return updated;
+        return new DecisionOutcome(DecisionResult.Decided, updated);
     }
 
     private async Task<Pay.Message.Exchange.OutboxPublisher.Entities.MessageRegistry> ResolveRegistryAsync(string messageName)

@@ -12,6 +12,7 @@ public class Payment
     public string Status { get; set; } = PaymentStatus.Pending;
     public string? DeclineReason { get; set; }
     public string? Reference { get; init; }
+    public string? CreatedBy { get; init; }  // actor id (token `sub`) who created it — drives maker-checker
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset UpdatedAt { get; set; }
 }

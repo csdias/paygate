@@ -73,17 +73,5 @@ public static class Config
             AllowedCorsOrigins = { "http://localhost:5173" },
             AllowedScopes = { "openid", "profile", "role", "payments.read", "payments.approve" },
         },
-
-        // VERIFICATION ONLY — Resource Owner Password so we can fetch tokens from curl
-        // without a login UI during this backend-first pass. Remove (or disable) once the
-        // React code+PKCE flow lands; ROP is not for production.
-        new Client
-        {
-            ClientId = "paygate.test",
-            ClientName = "Local token tester (ROP — verification only)",
-            AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
-            ClientSecrets = { new Secret("test-secret".Sha256()) },
-            AllowedScopes = { "openid", "profile", "role", "payments.read", "payments.write", "payments.approve" },
-        },
     ];
 }
